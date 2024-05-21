@@ -156,10 +156,14 @@ public class ControllerBuscarOs {
         
         System.out.println("Resposta: "+conn.getResponseCode()+" "+conn.getResponseMessage());
         
+        String diagnosticoOficina = "";
+        BigDecimal numOS = null;
         for(int i = 0; i < retornoApontamentoZZT.length; i++) {
-        	atualizarDiagnosticoOficina(new BigDecimal (retornoApontamentoZZT[i].getZzt_numosv()), retornoApontamentoZZT[i].getZzt_texto());
+        	diagnosticoOficina = diagnosticoOficina + retornoApontamentoZZT[i].getZzt_texto();
+        	numOS = new BigDecimal(retornoApontamentoZZT[i].getZzt_numosv());
         }
-        
+//        if(diagnosticoOficina != null && !diagnosticoOficina.isEmpty()) TODO
+        	atualizarDiagnosticoOficina(numOS, diagnosticoOficina);
         conn.disconnect();
 	}
 
@@ -235,7 +239,7 @@ public class ControllerBuscarOs {
             if(qtdKM.compareTo(BigDecimal.ZERO) != 0)
             	atualizarServicoExecutadoComApontamento(retornoApontamentoZZS[i], qtdKM);
             somarEPreencherHorasDosApontamentos(codOs, retornoApontamentoZZS[i]);
-        	atualizarOSComHorimetro(new BigDecimal(retornoApontamentoZZS[i].getZzs_hortri()), new BigDecimal(retornoApontamentoZZS[i].getZzs_numosv()));
+        	atualizarOSComHorimetro(new BigDecimal(retornoApontamentoZZS[i].getZzs_kilome()), new BigDecimal(retornoApontamentoZZS[i].getZzs_numosv()));
         }
 //      fecharOS(codOs);
         conn.disconnect();

@@ -8,6 +8,7 @@ import br.com.evonetwork.importarNota.Controller.GerarImportacaoController;
 import br.com.sankhya.extensions.actionbutton.AcaoRotinaJava;
 import br.com.sankhya.extensions.actionbutton.ContextoAcao;
 import br.com.sankhya.extensions.actionbutton.Registro;
+import br.com.sankhya.modelcore.util.MGECoreParameter;
 
 public class GerarImportacaoBotao implements AcaoRotinaJava{
 
@@ -35,7 +36,7 @@ public class GerarImportacaoBotao implements AcaoRotinaJava{
 		System.out.println("***EVO - GERANDO IMPORTAÇÃO DE NOTA - FIM***");
 	}
 
-	private String abrirTela(BigDecimal nunico) {
+	private String abrirTela(BigDecimal nunico) throws Exception {
 		String tela = "br.com.sankhya.menu.adicional.AD_IMPNOTA";
 		byte[] encodedBytesTela = Base64.encodeBase64(tela.getBytes());
 		
@@ -46,7 +47,8 @@ public class GerarImportacaoBotao implements AcaoRotinaJava{
 //		String link = "http://unapel.nuvemdatacom.com.br:9707/mge/system.jsp#app/"+new String(encodedBytesTela)+"/"+new String(encodedBytesParametros)+"/";
 		
 		//Base de produção
-		String link = "http://unapel.nuvemdatacom.com.br:9706/mge/system.jsp#app/"+new String(encodedBytesTela)+"/"+new String(encodedBytesParametros)+"/";
+		String link = MGECoreParameter.getParameterAsString("URLSANKHYA")+"/mge/system.jsp#app/"+new String(encodedBytesTela)+"/"+new String(encodedBytesParametros)+"/";
+		System.out.println("Link Imp Notas: "+link);
 		
 		String url = "<a target=\"_parent\" title=\"Importação de Nota gerada com sucesso\" href=\""+link+"\" >Abrir Importação de Nota</a>";
 		

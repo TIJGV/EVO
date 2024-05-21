@@ -10,18 +10,19 @@ public class ImportarProduto implements AcaoRotinaJava {
 
 	@Override
 	public void doAction(ContextoAcao ca) throws Exception {
+		System.out.println("**EVO - INICIANDO IMPORTAÇÃO PRODUTOS**");
 		JapeSession.SessionHandle hnd = null;
 		try {
 			hnd = JapeSession.open();
-			hnd.setPriorityLevel(JapeSession.LOW_PRIORITY); // em casos de deadlock, esta sessão cai
-			for (int i = 0; i < ca.getLinhas().length; i++) {
-	            Registro linha = ca.getLinhas()[i];
-                System.out.println("**EVO - INICIANDO IMPORTAÇÃO PRODUTOS**");
-                Controller.importar(ca, linha);
-	        }
+			hnd.setPriorityLevel(JapeSession.LOW_PRIORITY);
+			for (int i = 0; i < ca.getLinhas().length; ++i) {
+				final Registro linha = ca.getLinhas()[i];
+				Controller.importar(ca, linha);
+			}
 		} finally {
-			System.out.println("**EVO - FIM IMPORTAÇÃO PRODUTOS**");
 			JapeSession.close(hnd);
 		}
+		JapeSession.close(hnd);
+		System.out.println("**EVO - FIM IMPORTAÇÃO PRODUTOS**");
 	}
 }

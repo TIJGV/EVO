@@ -111,7 +111,7 @@ public class ControllerPeca {
 		
 		Peca.setAtivo(""+ativo);
 		Peca.setCodProduto(((String) PecasVO.getProperty("REFFORN"))); // Alteração Solicitada pelo Leonardo - 22/02/2023
-		Peca.setDescProduto(((String) PecasVO.getProperty("DESCRPROD")).replace("\"", ""));
+		Peca.setDescProduto(((String) PecasVO.getProperty("DESCRPROD")).replace("\"", "").replaceAll("\\n", "").replaceAll("\\r", "").replaceAll("\n", "").replaceAll("\r", ""));
 		
 		return Peca;
 	}

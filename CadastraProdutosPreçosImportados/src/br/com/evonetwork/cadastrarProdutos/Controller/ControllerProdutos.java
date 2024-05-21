@@ -17,387 +17,370 @@ import br.com.sankhya.jape.sql.NativeSql;
 import br.com.sankhya.jape.vo.DynamicVO;
 import br.com.sankhya.jape.wrapper.JapeFactory;
 import br.com.sankhya.jape.wrapper.JapeWrapper;
-import br.com.sankhya.modelcore.util.DynamicEntityNames;
 import br.com.sankhya.modelcore.util.EntityFacadeFactory;
+import br.com.sankhya.modelcore.util.MGECoreParameter;
 
 public class ControllerProdutos {
 	
+	private static int qtdProdutos = 0;
+	private static int qtdLinhas = 0;
+
 	public static void cadastrarProdutos(ContextoAcao ca, Registro linha) throws Exception {
 		BigDecimal nroUnicoImportacao = (BigDecimal) linha.getCampo("NROUNICO");
 		BigDecimal nroUnicoConfig = (BigDecimal) linha.getCampo("NROUNICOCONFIG");
 		String atualizarProdutos = (String) ca.getParam("ATUALIZARPROD");
-		
-		int qtdProdutos = 0;
-		
-		/* QUERY PARA COLETAR DADOS PRODUTOS */
-		QueryExecutor query1 = ca.getQuery();
-		query1.setParam("NROUNICO", nroUnicoImportacao);
-		try {
-			query1.nativeSelect("SELECT NROUNICOPRO, REFFORN, DESCRPROD, USOPROD, ORIGPROD, NCM, CODVOL FROM AD_DADOSPRODUTO WHERE NROUNICO = {NROUNICO} AND IMPORTADO = 'S' ORDER BY NROUNICOPRO");
-			while(query1.next()) {
-				String refForn = null;
-				String descrProd = null;
-				String usoProd = null;
-				String origProd = null;
-				String ncm = null;
-				String codVol = null;
-				BigDecimal codProImp = null;
-				
-				refForn = query1.getString("REFFORN");
-				descrProd = query1.getString("DESCRPROD");
-				
-				usoProd = query1.getString("USOPROD");
-				if(usoProd == null)
-					usoProd = getUsoProdutoConfig(nroUnicoConfig, ca);
-				
-				origProd = query1.getString("ORIGPROD");
-				if(origProd == null)
-					origProd = getOrigemProdutoConfig(nroUnicoConfig, ca);
-				
-				if(!"0".equals(origProd)) { // ADICIONADO 27/07/2023 PARA DIFERENCIAR PRODUTOS COM ORIGENS DIFERENTES DE '0'
-					String refFornAntiga = refForn;
-					refForn = refForn+origProd;
-					System.out.println("Atualizando REFFORN de: '"+refFornAntiga+"' para: '"+refForn+"'");
-				}
-				
-				ncm = query1.getString("NCM");
-				if(ncm == null) {
-					ncm = "00000000";
-				}
-				
-				codVol = query1.getString("CODVOL");
-				if(codVol == null)
-					codVol = getVolumeProdutoConfig(nroUnicoConfig, ca);
-
-				codProImp = query1.getBigDecimal("NROUNICOPRO");
-				
-				//usoProd = getCodigoUsoProduto(usoProd);
-				
-				System.out.println("REFFORN: "+refForn+" - PROD: "+descrProd+" - NROUNICOPRO: "+codProImp);
-				cadastrarAtualizarProdutos(refForn, descrProd, usoProd, origProd, ncm, codVol, ca, atualizarProdutos, nroUnicoImportacao, codProImp, nroUnicoConfig);
-				
-				qtdProdutos++;
+		int qtdLinhas = MGECoreParameter.getParameterAsInt("QTDLINHASIMPPRO");
+		int qtdLinhasTotal = buscarQuantidadeTotalDeLinhas(nroUnicoImportacao, ca);
+		if(qtdLinhasTotal == 0) {
+			ca.setMensagemRetorno("Nenhuma linha restante para importar!");
+			return;
+		}
+		while (qtdLinhasTotal > 0) {
+			SessionHandle hnd = null;
+			try {
+				hnd = JapeSession.open();
+				hnd.setCanTimeout(false);
+				hnd.execWithTX( new JapeSession.TXBlock() {
+					public void doWithTx() throws Exception {
+						JdbcWrapper jdbc = null;
+						NativeSql sql = null;
+						ResultSet rset = null;
+						try {
+							EntityFacade entity = EntityFacadeFactory.getDWFFacade();
+							jdbc = entity.getJdbcWrapper();
+							jdbc.openSession();
+							
+							sql = new NativeSql(jdbc);
+							
+							sql.appendSql("SELECT * FROM AD_DADOSPRODUTO WHERE NROUNICO = "+nroUnicoImportacao+" AND IMPORTADO = 'S' AND ROWNUM <= "+qtdLinhas+" ORDER BY NROUNICOPRO");
+							System.out.println("SQL: "+sql.toString());
+							
+							rset = sql.executeQuery();
+							
+							while(rset.next()) {
+								String refForn = rset.getString("REFFORN");
+								String descrProd = rset.getString("DESCRPROD");
+								String usoProd = rset.getString("USOPROD");
+								String origProd = rset.getString("ORIGPROD");
+								String ncm = rset.getString("NCM");
+								String codVol = rset.getString("CODVOL");
+								BigDecimal codProImp = rset.getBigDecimal("NROUNICOPRO");
+								BigDecimal CodSTIEnt = rset.getBigDecimal("CSTIPIENT");
+								BigDecimal CodSTISai = rset.getBigDecimal("CSTIPISAI");
+								BigDecimal qtdEmbalagem = rset.getBigDecimal("QTDEMB");
+								if (usoProd == null)
+									usoProd = getUsoProdutoConfig(nroUnicoConfig, ca);
+								if (origProd == null)
+									origProd = getOrigemProdutoConfig(nroUnicoConfig, ca);
+								if (refForn == null || refForn.isEmpty()) {
+									System.out.println("Produto sem referência do fornecedor");
+									removerProdutoDaImportacao(nroUnicoImportacao, codProImp);
+								} else {
+									if (ncm == null)
+										ncm = "00000000";
+									if (codVol == null)
+										codVol = getVolumeProdutoConfig(nroUnicoConfig, ca);
+									if (CodSTIEnt == null)
+										CodSTIEnt = getCodSTIEntradaConfig(nroUnicoConfig, ca);
+									if (CodSTISai == null)
+										CodSTISai = getCodSTISaidaConfig(nroUnicoConfig, ca);
+									if (descrProd == null || descrProd.isEmpty()) {
+										System.out.println("Produto sem descrição");
+										removerProdutoDaImportacao(nroUnicoImportacao, codProImp);
+									} else {
+										System.out.println("REFFORN: "+refForn+" - PROD: "+descrProd+" - NROUNICOPRO: "+codProImp);
+										cadastrarAtualizarProdutos(refForn, descrProd, usoProd, origProd, ncm, codVol, ca, atualizarProdutos, nroUnicoImportacao, codProImp, nroUnicoConfig, CodSTIEnt, CodSTISai, qtdEmbalagem);
+										qtdProdutos += 1;
+									}
+								}
+							}
+						} catch (Exception e) {
+							e.printStackTrace();
+							throw new Exception(e.getMessage());
+						} finally {
+							System.out.println("Fechando result set cadastrarProdutos");
+							rset.getStatement().close();
+							rset.close();
+							JdbcUtils.closeResultSet(rset);
+							NativeSql.releaseResources(sql);
+							JdbcWrapper.closeSession(jdbc);
+						}
+					}
+				});
+			} catch(Exception e) {
+				e.printStackTrace();
+				throw new Exception(e.getMessage());
+			} finally {
+				JapeSession.close(hnd);
 			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			ca.mostraErro(e.getMessage());
-		} finally {
-			query1.close();
+			qtdLinhasTotal = buscarQuantidadeTotalDeLinhas(nroUnicoImportacao, ca);
+			System.out.println("Qtd. linhas totais: "+qtdLinhasTotal);
 		}
-		/* ------ FIM DA QUERY ------ */
-		if(qtdProdutos == 0) {
+		if (qtdProdutos == 0)
 			ca.setMensagemRetorno("Nenhum produto encontrado!");
-		} else {
-			ca.setMensagemRetorno(qtdProdutos+" produtos cadastrados/atualizados!");
+		else
+			ca.setMensagemRetorno(String.valueOf(qtdProdutos)+" produtos cadastrados/atualizados!");
+	}
+
+	private static int buscarQuantidadeTotalDeLinhas(BigDecimal nroUnicoImportacao, ContextoAcao ca) throws Exception {
+		SessionHandle hnd = null;
+		try {
+			hnd = JapeSession.open();
+			hnd.setCanTimeout(false);
+			hnd.execWithTX( new JapeSession.TXBlock() {
+				public void doWithTx() throws Exception {
+					JdbcWrapper jdbc = null;
+					NativeSql sql = null;
+					ResultSet rset = null;
+					try {
+						EntityFacade entity = EntityFacadeFactory.getDWFFacade();
+						jdbc = entity.getJdbcWrapper();
+						jdbc.openSession();
+						
+						sql = new NativeSql(jdbc);
+						
+						sql.appendSql("SELECT COUNT(*) AS QTDLINHAS FROM AD_DADOSPRODUTO WHERE NROUNICO = "+nroUnicoImportacao+" AND IMPORTADO = 'S' ORDER BY NROUNICOPRO");
+						System.out.println("SQL: "+sql.toString());
+						
+						rset = sql.executeQuery();
+						
+						if(rset.next())
+							qtdLinhas = (rset.getBigDecimal("QTDLINHAS")).intValue();
+					} catch (Exception e) {
+						e.printStackTrace();
+						throw new Exception(e.getMessage());
+					} finally {
+						System.out.println("Fechando result set buscarQuantidadeTotalDeLinhas");
+						rset.getStatement().close();
+						rset.close();
+						JdbcUtils.closeResultSet(rset);
+						NativeSql.releaseResources(sql);
+						JdbcWrapper.closeSession(jdbc);
+					}
+				}
+			});
+		} catch(Exception e) {
+			e.printStackTrace();
+			throw new Exception(e.getMessage());
+		} finally {
+			JapeSession.close(hnd);
 		}
+		return qtdLinhas;
+	}
+
+	private static void removerProdutoDaImportacao(BigDecimal nroUnicoImportacao, BigDecimal codProImp) throws Exception {
+		System.out.println("Removendo produto: "+nroUnicoImportacao+", "+codProImp);
+		JapeWrapper configDao = JapeFactory.dao("AD_DADOSPRODUTO");
+		configDao.deleteByCriteria("NROUNICO = "+nroUnicoImportacao+" AND NROUNICOPRO = "+codProImp);
+	}
+
+	private static BigDecimal getCodSTISaidaConfig(BigDecimal nroUnicoConfig, ContextoAcao ca) throws Exception {
+		BigDecimal retorno = null;
+		EntityFacade dwfFacade = EntityFacadeFactory.getDWFFacade();
+		DynamicVO configuracaoVO = (DynamicVO) dwfFacade.findEntityByPrimaryKeyAsVO("AD_CONFIGIMPPRO", nroUnicoConfig);
+		retorno = configuracaoVO.asBigDecimal("CSTIPISAI");
+		if(retorno == null)
+			throw new Exception("Código Sit.Trib.IPI Saida não encontrado");
+		return retorno;
+	}
+
+	private static BigDecimal getCodSTIEntradaConfig(BigDecimal nroUnicoConfig, ContextoAcao ca) throws Exception {
+		BigDecimal retorno = null;
+		EntityFacade dwfFacade = EntityFacadeFactory.getDWFFacade();
+		DynamicVO configuracaoVO = (DynamicVO) dwfFacade.findEntityByPrimaryKeyAsVO("AD_CONFIGIMPPRO", nroUnicoConfig);
+		retorno = configuracaoVO.asBigDecimal("CSTIPIENT");
+		if(retorno == null)
+			throw new Exception("Código Sit.Trib.IPI Entrada não encontrado");
+		return retorno;
 	}
 
 	private static String getVolumeProdutoConfig(BigDecimal nroUnicoConfig, ContextoAcao ca) throws Exception {
 		String retorno = "";
-		JdbcWrapper jdbc = null;
-		NativeSql sql = null;
-		ResultSet rset = null;
-		SessionHandle hnd = null;
-	
-		try {
-			hnd = JapeSession.open();
-			hnd.setFindersMaxRows(-1);
-			EntityFacade entity = EntityFacadeFactory.getDWFFacade();
-			jdbc = entity.getJdbcWrapper();
-			jdbc.openSession();
-	
-			sql = new NativeSql(jdbc);
-	
-			sql.appendSql("SELECT CODVOL FROM AD_CONFIGIMPPRO WHERE NROUNICOCONFIG = "+nroUnicoConfig);
-	
-			rset = sql.executeQuery();
-	
-			if (rset.next()) {
-				retorno = rset.getString("CODVOL");
-			} else {
-				throw new Exception("Unidade do produto não encontrada");
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			ca.mostraErro("Unidade do produto não foi encontrada na planilha nem na configuração!");
-		} finally {
-			JdbcUtils.closeResultSet(rset);
-			NativeSql.releaseResources(sql);
-			JdbcWrapper.closeSession(jdbc);
-			JapeSession.close(hnd);
-		}
+		EntityFacade dwfFacade = EntityFacadeFactory.getDWFFacade();
+		DynamicVO configuracaoVO = (DynamicVO) dwfFacade.findEntityByPrimaryKeyAsVO("AD_CONFIGIMPPRO", nroUnicoConfig);
+		retorno = configuracaoVO.asString("CODVOL");
+		if("".equals(retorno))
+			throw new Exception("Unidade do produto não encontrado");
 		return retorno;
 	}
 
 	private static String getOrigemProdutoConfig(BigDecimal nroUnicoConfig, ContextoAcao ca) throws Exception {
 		String retorno = "";
-		JdbcWrapper jdbc = null;
-		NativeSql sql = null;
-		ResultSet rset = null;
-		SessionHandle hnd = null;
-	
-		try {
-			hnd = JapeSession.open();
-			hnd.setFindersMaxRows(-1);
-			EntityFacade entity = EntityFacadeFactory.getDWFFacade();
-			jdbc = entity.getJdbcWrapper();
-			jdbc.openSession();
-	
-			sql = new NativeSql(jdbc);
-	
-			sql.appendSql("SELECT ORIGPROD FROM AD_CONFIGIMPPRO WHERE NROUNICOCONFIG = "+nroUnicoConfig);
-	
-			rset = sql.executeQuery();
-	
-			if (rset.next()) {
-				retorno = rset.getString("ORIGPROD");
-			} else {
-				throw new Exception("Origem do produto não encontrado");
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			ca.mostraErro("Origem do produto não foi encontrado na planilha nem na configuração!");
-		} finally {
-			JdbcUtils.closeResultSet(rset);
-			NativeSql.releaseResources(sql);
-			JdbcWrapper.closeSession(jdbc);
-			JapeSession.close(hnd);
-		}
+		EntityFacade dwfFacade = EntityFacadeFactory.getDWFFacade();
+		DynamicVO configuracaoVO = (DynamicVO) dwfFacade.findEntityByPrimaryKeyAsVO("AD_CONFIGIMPPRO", nroUnicoConfig);
+		retorno = configuracaoVO.asString("ORIGPROD");
+		if("".equals(retorno))
+			throw new Exception("Origem do produto não encontrado");
 		return retorno;
 	}
 
 	private static String getUsoProdutoConfig(BigDecimal nroUnicoConfig, ContextoAcao ca) throws Exception {
 		String retorno = "";
-		JdbcWrapper jdbc = null;
-		NativeSql sql = null;
-		ResultSet rset = null;
-		SessionHandle hnd = null;
-	
-		try {
-			hnd = JapeSession.open();
-			hnd.setFindersMaxRows(-1);
-			EntityFacade entity = EntityFacadeFactory.getDWFFacade();
-			jdbc = entity.getJdbcWrapper();
-			jdbc.openSession();
-	
-			sql = new NativeSql(jdbc);
-	
-			sql.appendSql("SELECT USOPROD FROM AD_CONFIGIMPPRO WHERE NROUNICOCONFIG = "+nroUnicoConfig);
-	
-			rset = sql.executeQuery();
-	
-			if (rset.next()) {
-				retorno = rset.getString("USOPROD");
-			} else {
-				throw new Exception("Uso do produto não encontrado");
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			ca.mostraErro("Uso do produto não foi encontrado na planilha nem na configuração!");
-		} finally {
-			JdbcUtils.closeResultSet(rset);
-			NativeSql.releaseResources(sql);
-			JdbcWrapper.closeSession(jdbc);
-			JapeSession.close(hnd);
-		}
+		EntityFacade dwfFacade = EntityFacadeFactory.getDWFFacade();
+		DynamicVO configuracaoVO = (DynamicVO) dwfFacade.findEntityByPrimaryKeyAsVO("AD_CONFIGIMPPRO", nroUnicoConfig);
+		retorno = configuracaoVO.asString("USOPROD");
+		if("".equals(retorno))
+			throw new Exception("Uso do produto não encontrado");
 		return retorno;
 	}
 
-//	private static String getCodigoUsoProduto(String usoProd) {
-//		if("Revenda".equals(usoProd)) {
-//			return "R";
-//		} else if("M.P.".equals(usoProd)) {
-//			return "M";
-//		} else if("Venda de prod.".equals(usoProd)) {
-//			return "V";
-//		} else if("".equals(usoProd) || " ".equals(usoProd) || usoProd == null) {
-//			return "R";
-//		}
-//		return "R";
-//	}
-
-	private static void cadastrarAtualizarProdutos(String refForn, String descrProd, String usoProd, String origProd, String ncm, String codVol,
-			ContextoAcao ca, String atualizarProdutos, BigDecimal nroUnicoImportacao,  BigDecimal codProImp, BigDecimal nroUnicoConfig) throws Exception {
+	private static void cadastrarAtualizarProdutos(String refForn, String descrProd, String usoProd, String origProd, String ncm, String codVol, ContextoAcao ca, String atualizarProdutos, BigDecimal nroUnicoImportacao, BigDecimal codProImp, BigDecimal nroUnicoConfig, BigDecimal codSTIEnt, BigDecimal codSTISai, BigDecimal qtdEmbalagem) throws Exception {
 		BigDecimal codProd = null;
 		BigDecimal codProdCriado = null;
 		int atualizado = 0;
-		
-		/* QUERY PARA VERIFICAR SE PRODUTO JÁ EXISTE */
-		QueryExecutor query = ca.getQuery();
-		QueryExecutor queryUpdate = ca.getQuery();
+		JdbcWrapper jdbc = null;
+		NativeSql sql = null;
+		ResultSet rset = null;
 		try {
-			String select = "SELECT CODPROD FROM TGFPRO WHERE REFFORN = '"+refForn+"'";
-			query.nativeSelect(select);
-			while(query.next()) {
-				codProd = query.getBigDecimal("CODPROD");
-				if("S".equals(atualizarProdutos)) {
-					// SE PRODUTO EXISTIR E FLAG ATUALIZAR = TRUE
-					// ATUALIZAR OS DADOS
-					queryUpdate.setParam("CODPROD", codProd);
-					
-					if(descrProd != null)
-						queryUpdate.setParam("DESCRPROD", descrProd);
-					else
-						queryUpdate.setParam("DESCRPROD", "");
-					
-					if(usoProd != null)
-						queryUpdate.setParam("USOPROD", usoProd);
-					else
-						queryUpdate.setParam("USOPROD", "");
-					
-					if(origProd != null)
-						queryUpdate.setParam("ORIGPROD", origProd);
-					else
-						queryUpdate.setParam("ORIGPROD", "");
-					
-					if(ncm != null)
-						queryUpdate.setParam("NCM", ncm);
-					else
-						queryUpdate.setParam("NCM", "");
-					
-					if(codVol != null)
-						queryUpdate.setParam("CODVOL", codVol);
-					else
-						queryUpdate.setParam("CODVOL", "");
-					
-					String marca = getMarca(ca, nroUnicoConfig);
-					if(marca != null)
-						queryUpdate.setParam("MARCA", marca);
-					else
-						queryUpdate.setParam("MARCA", "");
-					
-					queryUpdate.setParam("CODGRUPOPROD", new BigDecimal((String) ca.getParam("CODGRUPOPROD")));
-					
-					queryUpdate.setParam("AD_DHIMPORTACAO", TimeUtils.getNow());
-					
-					queryUpdate.setParam("AD_CODUSUIMPORTACAO", ca.getUsuarioLogado());
-					
-					queryUpdate.setParam("ICMSGERENCIA", "S");
-					
-					queryUpdate.setParam("CALCULOGIRO", "G");
-					
-					try {
-						queryUpdate.update("UPDATE TGFPRO SET DESCRPROD = {DESCRPROD}, USOPROD = {USOPROD}, ORIGPROD = {ORIGPROD}, NCM = {NCM}, CODVOL = {CODVOL}, MARCA = {MARCA}, CODGRUPOPROD = {CODGRUPOPROD}, AD_DHIMPORTACAO = {AD_DHIMPORTACAO}, AD_CODUSUIMPORTACAO = {AD_CODUSUIMPORTACAO}, ICMSGERENCIA = {ICMSGERENCIA}, CALCULOGIRO = {CALCULOGIRO} WHERE CODPROD = {CODPROD}");
-					} catch (Exception e) {
-						ca.mostraErro(e.getMessage());
-					} finally {
-						queryUpdate.close();
-					}
+			EntityFacade entity = EntityFacadeFactory.getDWFFacade();
+			jdbc = entity.getJdbcWrapper();
+			jdbc.openSession();
+			
+			sql = new NativeSql(jdbc);
+			
+			sql.appendSql("SELECT CODPROD FROM TGFPRO WHERE REFFORN = '"+refForn+"'");
+			System.out.println("SQL: "+sql.toString());
+			
+			rset = sql.executeQuery();
+			
+			while(rset.next()) {
+				codProd = rset.getBigDecimal("CODPROD");
+				if (!"S".equals(atualizarProdutos)) {
 					codProdCriado = codProd;
-					atualizado = 1;
-				} else {
-					codProdCriado = codProd;
-					atualizarProdutoImportado(nroUnicoImportacao, codProImp, codProdCriado, ca);
+					System.out.println("Produto já existe: "+codProdCriado+" com REFFORN: "+refForn);
+					atualizarProdutoImportado(nroUnicoImportacao, codProImp, codProdCriado);
 					return;
 				}
-			}
-		} catch (Exception e1) {
-			ca.mostraErro(e1.getMessage());
-		} finally {
-			query.close();
-		}
-		/* ------ FIM DA QUERY ------ */
-		
-		if(atualizado == 0) {
-			// SE PRODUTO NÃO EXISTIR, REALIZAR CADASTRO
-			JapeSession.SessionHandle hnd = null;
-			try {
-				if(descrProd == null)
-					descrProd = "";
+				QueryExecutor queryUpdate = ca.getQuery();
+				queryUpdate.setParam("CODPROD", codProd);
 				
-				if(usoProd == null)
-					usoProd = "";
+				if (descrProd != null)
+					queryUpdate.setParam("DESCRPROD", descrProd);
+				else
+					queryUpdate.setParam("DESCRPROD", "");
 				
-				if(origProd == null)
-					origProd = "";
-				
-				if(ncm == null)
-					ncm = "";
-				
-				if(codVol == null)
-					codVol = "";
-				
+				if (usoProd != null)
+					queryUpdate.setParam("USOPROD", usoProd);
+				else
+					queryUpdate.setParam("USOPROD", "");
+
+				if (origProd != null)
+					queryUpdate.setParam("ORIGPROD", origProd);
+				else
+					queryUpdate.setParam("ORIGPROD", "");
+
+				if (ncm != null)
+					queryUpdate.setParam("NCM", ncm);
+				else
+					queryUpdate.setParam("NCM", "");
+
+				if (codVol != null)
+					queryUpdate.setParam("CODVOL", codVol);
+				else
+					queryUpdate.setParam("CODVOL", "");
+
 				String marca = getMarca(ca, nroUnicoConfig);
-				if(marca == null)
-					marca = "";
+				if (marca != null)
+					queryUpdate.setParam("MARCA", marca);
+				else
+					queryUpdate.setParam("MARCA", "");
+
+				if (codSTIEnt != null)
+					queryUpdate.setParam("CSTIPIENT", codSTIEnt);
+				else
+					queryUpdate.setParam("CSTIPIENT", "");
+
+				if (codSTISai != null)
+					queryUpdate.setParam("CSTIPISAI", codSTISai);
+				else
+					queryUpdate.setParam("CSTIPISAI", "");
 				
-				hnd = JapeSession.open();
-				JapeWrapper InsertPRO = JapeFactory.dao(DynamicEntityNames.PRODUTO);
-				DynamicVO salvar = InsertPRO.create()
-						.set("REFFORN", refForn)
-						.set("DESCRPROD", descrProd)
-						.set("USOPROD", usoProd)
-						.set("ORIGPROD", origProd)
-						.set("NCM", ncm)
-						.set("CODVOL", codVol)
-						.set("ATIVO", "N") // PRODUTO CADASTRADO ENTRA DESATIVADO
-						.set("MARCA", marca)
-						.set("CODGRUPOPROD", new BigDecimal((String) ca.getParam("CODGRUPOPROD")))
-						.set("AD_DHIMPORTACAO", TimeUtils.getNow())
-						.set("AD_CODUSUIMPORTACAO", ca.getUsuarioLogado())
-						.set("ICMSGERENCIA", "S") //Adição à pedido do Rafael/Davi
-						.set("CALCULOGIRO", "G") //Adição à pedido do Rafael/Davi
-						.set("USALOCAL", "S") //Adição à pedido do Rafael/Davi
-						.save();
-				codProdCriado = (BigDecimal) salvar.getProperty("CODPROD");
+				if (qtdEmbalagem != null)
+					queryUpdate.setParam("QTDEMB", qtdEmbalagem);
+				else
+					queryUpdate.setParam("QTDEMB", "");
 				
-				System.out.println("Produto criado: "+codProdCriado+" com REFFORN: "+refForn);
-			} catch (Exception e) {
-				ca.mostraErro(e.getMessage());
-			} finally {
-				JapeSession.close(hnd);
+				queryUpdate.setParam("AD_NROIMPORTACAO", nroUnicoImportacao);
+				queryUpdate.setParam("CODGRUPOPROD", new BigDecimal((String) ca.getParam("CODGRUPOPROD")));
+				queryUpdate.setParam("AD_DHIMPORTACAO", TimeUtils.getNow());
+				queryUpdate.setParam("AD_CODUSUIMPORTACAO", ca.getUsuarioLogado());
+				queryUpdate.setParam("ICMSGERENCIA", "S");
+				queryUpdate.setParam("CALCULOGIRO", "G");
+				try {
+					queryUpdate.update("UPDATE TGFPRO SET AD_NROIMPORTACAO = {AD_NROIMPORTACAO}, QTDEMB = {QTDEMB}, DESCRPROD = {DESCRPROD}, USOPROD = {USOPROD}, ORIGPROD = {ORIGPROD}, NCM = {NCM}, CODVOL = {CODVOL}, MARCA = {MARCA}, CODGRUPOPROD = {CODGRUPOPROD}, AD_DHIMPORTACAO = {AD_DHIMPORTACAO}, AD_CODUSUIMPORTACAO = {AD_CODUSUIMPORTACAO}, ICMSGERENCIA = {ICMSGERENCIA}, CALCULOGIRO = {CALCULOGIRO}, CSTIPIENT = {CSTIPIENT}, CSTIPISAI = {CSTIPISAI} WHERE CODPROD = {CODPROD}");
+					System.out.println("UPD TGFPRO WHERE CODPROD = "+codProd);
+				} catch (Exception e) {
+					e.printStackTrace();
+					throw new Exception(e.getMessage());
+				}
+				queryUpdate.close();
+				codProdCriado = codProd;
+				atualizado = 1;
+				System.out.println("Produto atualizado: "+codProdCriado+" com REFFORN: "+refForn);
 			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new Exception(e.getMessage());
+		} finally {
+			System.out.println("Fechando result set cadastrarAtualizarProdutos");
+			rset.getStatement().close();
+			rset.close();
+			JdbcUtils.closeResultSet(rset);
+			NativeSql.releaseResources(sql);
+			JdbcWrapper.closeSession(jdbc);
 		}
-		
-		atualizarProdutoImportado(nroUnicoImportacao, codProImp, codProdCriado, ca);
+		if (atualizado == 0) {
+			System.out.println("Criando produto: "+refForn);
+			String marca = getMarca(ca, nroUnicoConfig);
+			JapeWrapper InsertPRO = JapeFactory.dao("Produto");
+			DynamicVO salvar = InsertPRO.create()
+					.set("REFFORN", refForn)
+					.set("DESCRPROD", descrProd)
+					.set("USOPROD", usoProd)
+					.set("ORIGPROD", origProd)
+					.set("NCM", ncm)
+					.set("CODVOL", codVol)
+					.set("ATIVO", "N")
+					.set("MARCA", marca)
+					.set("CODGRUPOPROD", new BigDecimal((String) ca.getParam("CODGRUPOPROD")))
+					.set("AD_DHIMPORTACAO", TimeUtils.getNow())
+					.set("AD_CODUSUIMPORTACAO", ca.getUsuarioLogado())
+					.set("ICMSGERENCIA", "S")
+					.set("CALCULOGIRO", "G")
+					.set("USALOCAL", "S")
+					.set("CSTIPIENT", codSTIEnt)
+					.set("CSTIPISAI", codSTISai)
+					.set("AD_NROIMPORTACAO", nroUnicoImportacao)
+					.save();
+			codProdCriado = (BigDecimal) salvar.getProperty("CODPROD");
+			System.out.println("Produto criado: "+codProdCriado+" com REFFORN: "+refForn);
+		}
+		atualizarProdutoImportado(nroUnicoImportacao, codProImp, codProdCriado);
 	}
 
-	private static void atualizarProdutoImportado(BigDecimal nroUnicoImportacao, BigDecimal codProImp,
-		BigDecimal codProdCriado, ContextoAcao ca) throws Exception {
-		QueryExecutor queryUpdateImportacao = ca.getQuery();
-		
-		queryUpdateImportacao.setParam("NROUNICO", nroUnicoImportacao);
-		queryUpdateImportacao.setParam("NROUNICOPRO", codProImp);
-		queryUpdateImportacao.setParam("CODPROIMP", codProdCriado);
-		try {
-			queryUpdateImportacao.update("UPDATE AD_DADOSPRODUTO SET CODPROIMP = {CODPROIMP}, IMPORTADO = 'N', PRECOIMPORTADO = 'N' WHERE NROUNICO = {NROUNICO} AND NROUNICOPRO = {NROUNICOPRO}");
-		} catch (Exception e) {
-			ca.mostraErro(e.getMessage());
-		} finally {
-			queryUpdateImportacao.close();
-		}
+	private static void atualizarProdutoImportado(BigDecimal nroUnicoImportacao, BigDecimal codProImp, BigDecimal codProdCriado) throws Exception {
+		System.out.println("Atualizar produto importado: "+nroUnicoImportacao+", "+codProImp+", "+codProdCriado);
+		JapeWrapper dadosProdutoDAO = JapeFactory.dao("AD_DADOSPRODUTO");
+		DynamicVO dadosProduto = dadosProdutoDAO.findOne("NROUNICO = "+nroUnicoImportacao+" AND NROUNICOPRO = "+codProImp);
+		dadosProdutoDAO.prepareToUpdate(dadosProduto)
+			.set("CODPROIMP", codProdCriado)
+			.set("IMPORTADO", "N")
+			.set("PRECOIMPORTADO", "N")
+			.update();
 	}
 
 	private static String getMarca(ContextoAcao ca, BigDecimal nroUnicoConfig) throws Exception {
-		String marca = null;
 		BigDecimal codigo = null;
-		
-		QueryExecutor query1 = ca.getQuery();
-		query1.setParam("NROUNICOCONFIG", nroUnicoConfig);
-		try {
-			query1.nativeSelect("SELECT CODMARCA FROM AD_CONFIGIMPPRO WHERE NROUNICOCONFIG = {NROUNICOCONFIG}");
-			while(query1.next()) {
-				codigo = query1.getBigDecimal("CODMARCA");
-			}
-		} catch (Exception e) {
-			ca.mostraErro(e.getMessage());
-		} finally {
-			query1.close();
-		}
-		
-		QueryExecutor query2 = ca.getQuery();
-		query2.setParam("CODIGO", codigo);
-		try {
-			query2.nativeSelect("SELECT DESCRICAO FROM TGFMAR WHERE CODIGO = {CODIGO}");
-			while(query2.next()) {
-				marca = query2.getString("DESCRICAO");
-			}
-		} catch (Exception e) {
-			ca.mostraErro(e.getMessage());
-		} finally {
-			query2.close();
-		}
-		
-		return marca;
+		String retorno = "";
+		EntityFacade dwfFacade = EntityFacadeFactory.getDWFFacade();
+		DynamicVO configuracaoVO = (DynamicVO) dwfFacade.findEntityByPrimaryKeyAsVO("AD_CONFIGIMPPRO", nroUnicoConfig);
+		codigo = configuracaoVO.asBigDecimal("CODMARCA");
+		if(codigo == null)
+			throw new Exception("Marca não encontrada na configuração da importação!");
+		DynamicVO marcaVO = (DynamicVO) dwfFacade.findEntityByPrimaryKeyAsVO("MarcaProduto", codigo);
+		retorno = marcaVO.asString("DESCRICAO");
+		if("".equals(retorno))
+			throw new Exception("Descrição da marca "+codigo+" não encontrada");
+		return retorno;
 	}
 }

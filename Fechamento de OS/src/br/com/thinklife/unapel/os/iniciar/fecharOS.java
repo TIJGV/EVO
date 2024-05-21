@@ -19,9 +19,10 @@ import br.com.sankhya.modelcore.util.EntityFacadeFactory;
 import br.com.thinklife.unapel.os.consulta.buscaDados;
 import br.com.thinklife.unapel.os.consulta.buscaDadosStatusPeca;
 
-public class fecharOS implements AcaoRotinaJava
-{
+public class fecharOS implements AcaoRotinaJava {
+	
     public void doAction(final ContextoAcao arg0) throws Exception {
+    	System.out.println("INICIANDO FECHAMENTO DE OS");
         try {
 //            final BigDecimal codUsuLogado = arg0.getUsuarioLogado();
             final Registro[] linhas = arg0.getLinhas();
@@ -32,6 +33,7 @@ public class fecharOS implements AcaoRotinaJava
             for (int length = (array = linhas).length, i = 0; i < length; ++i) {
                 final Registro linha = array[i];
                 final BigDecimal NUMOS = (BigDecimal)linha.getCampo("NUMOS");
+                System.out.println("NUMOS: "+NUMOS);
                 final String DIAGNOSTICOFECHAMENTO = new StringBuilder().append(linha.getCampo("DIAGNOSTICOFECHAMENTO")).toString();
 //                final String DATAFECHAMENTO = new StringBuilder().append(linha.getCampo("DATAFECHAMENTO")).toString();
                 final String STATUS = new StringBuilder().append(linha.getCampo("STATUS")).toString();
@@ -56,9 +58,12 @@ public class fecharOS implements AcaoRotinaJava
                 }
                 final ResultSet queryVerificarStatusPeca = buscaDadosStatusPeca.VerificarStatusPeca(jdbc, NUMOS);
                 while (queryVerificarStatusPeca.next()) {
-                    if (queryVerificarStatusPeca.getString("STATUS").equalsIgnoreCase("P") || queryVerificarStatusPeca.getString("STATUS").equalsIgnoreCase("R")) {
-                        arg0.mostraErro("Não é possível fechar OS com peças com status previsto ou requerido");
-                    }
+                	String status = queryVerificarStatusPeca.getString("STATUS");
+                	if(status != null && !status.isEmpty()) {
+	                    if (status.equalsIgnoreCase("P") || status.equalsIgnoreCase("R")) {
+	                        arg0.mostraErro("Não é possível fechar OS com peças com status previsto ou requerido");
+	                    }
+                	}
                 }
                 if (DIAGNOSTICOFECHAMENTO == null || DIAGNOSTICOFECHAMENTO.isEmpty() || DIAGNOSTICOFECHAMENTO.equals("null")) {
                     arg0.mostraErro("'Ação não permitida!',<br>'Para realizar o fechamento da Ordem de Serviço é obrigatório o preenchimento dos campos: Diagnostico do Fechamento!'");
@@ -98,24 +103,37 @@ public class fecharOS implements AcaoRotinaJava
 			
 			sql = new NativeSql(jdbc);
 			
-			sql.appendSql("SELECT I.NUMOS,\n"
-					+ "I.NUMITEM,\n"
-					+ "(TRUNC((\n"
-					+ "SELECT (((TO_DATE('01/01/2022'|| ' ' ||SUBSTR(LPAD(COALESCE(HRFINAL,0),4,0),0,2) || ':' || SUBSTR(LPAD(COALESCE(HRFINAL,0),4,0),3,4)||':00' ,'dd/mm/yyyy HH24:MI:SS')-\n"
-					+ "TO_DATE('01/01/2022'|| ' ' ||SUBSTR(LPAD(COALESCE(HRINICIAL,0),4,0),0,2) || ':' || SUBSTR(LPAD(COALESCE(HRINICIAL,0),4,0),3,4)||':00','dd/mm/yyyy HH24:MI:SS'))-\n"
-					+ "(TO_DATE('01/01/2022'|| ' ' ||SUBSTR(LPAD(COALESCE(INTERVALO,0),4,0),0,2) || ':' || SUBSTR(LPAD(COALESCE(INTERVALO,0),4,0),3,4)||':00','dd/mm/yyyy HH24:MI:SS')-\n"
-					+ "TO_DATE('01/01/2022 00:00:00','dd/mm/yyyy HH24:MI:SS')))*1440)/60 AS MINUTOS\n"
-					+ "FROM AD_TCSITE ITE\n"
-					+ "WHERE ITE.NUMOS =I.NUMOS AND ITE.NUMITEM = I.NUMITEM),2)) AS HSTRABALHADAS,\n"
-					+ "(TRUNC((SELECT\n"
-					+ "((TO_DATE('01/01/2022'|| ' ' ||SUBSTR(LPAD(COALESCE(HORAAPONTAMENTOS,0),4,0),0,2) || ':' || SUBSTR(LPAD(COALESCE(HORAAPONTAMENTOS,0),4,0),3,4)||':00' ,'dd/mm/yyyy HH24:MI:SS')-\n"
-					+ "TO_DATE('01/01/2022 00:00:00','dd/mm/yyyy HH24:MI:SS'))*1440)/60 AS MINUTOS\n"
-					+ "FROM AD_TCSITE ITE\n"
-					+ "WHERE ITE.NUMOS = I.NUMOS AND ITE.NUMITEM = I.NUMITEM),2)) AS APONTAMENTOS, \n"
-					+ "COALESCE((select COALESCE(pro.AD_TEMPPADRAO,0)/100 from tgfpro pro where pro.codprod = I.codserv),0) AS TEMPOPADRAO, \n"
-					+ "I.QTDNEG, \n"
-					+ "I.CODSERV \n"
-					+ "FROM AD_TCSITE I \n"
+//			sql.appendSql("SELECT I.NUMOS,\n"
+//					+ "I.NUMITEM,\n"
+//					+ "(TRUNC((\n"
+//					+ "SELECT (((TO_DATE('01/01/2022'|| ' ' ||SUBSTR(LPAD(COALESCE(HRFINAL,0),4,0),0,2) || ':' || SUBSTR(LPAD(COALESCE(HRFINAL,0),4,0),3,4)||':00' ,'dd/mm/yyyy HH24:MI:SS')-\n"
+//					+ "TO_DATE('01/01/2022'|| ' ' ||SUBSTR(LPAD(COALESCE(HRINICIAL,0),4,0),0,2) || ':' || SUBSTR(LPAD(COALESCE(HRINICIAL,0),4,0),3,4)||':00','dd/mm/yyyy HH24:MI:SS'))-\n"
+//					+ "(TO_DATE('01/01/2022'|| ' ' ||SUBSTR(LPAD(COALESCE(INTERVALO,0),4,0),0,2) || ':' || SUBSTR(LPAD(COALESCE(INTERVALO,0),4,0),3,4)||':00','dd/mm/yyyy HH24:MI:SS')-\n"
+//					+ "TO_DATE('01/01/2022 00:00:00','dd/mm/yyyy HH24:MI:SS')))*1440)/60 AS MINUTOS\n"
+//					+ "FROM AD_TCSITE ITE\n"
+//					+ "WHERE ITE.NUMOS =I.NUMOS AND ITE.NUMITEM = I.NUMITEM),2)) AS HSTRABALHADAS,\n"
+//					+ "(TRUNC((SELECT\n"
+//					+ "((TO_DATE('01/01/2022'|| ' ' ||SUBSTR(LPAD(COALESCE(HORAAPONTAMENTOS,0),4,0),0,2) || ':' || SUBSTR(LPAD(COALESCE(HORAAPONTAMENTOS,0),4,0),3,4)||':00' ,'dd/mm/yyyy HH24:MI:SS')-\n"
+//					+ "TO_DATE('01/01/2022 00:00:00','dd/mm/yyyy HH24:MI:SS'))*1440)/60 AS MINUTOS\n"
+//					+ "FROM AD_TCSITE ITE\n"
+//					+ "WHERE ITE.NUMOS = I.NUMOS AND ITE.NUMITEM = I.NUMITEM),2)) AS APONTAMENTOS, \n"
+//					+ "COALESCE((select COALESCE(pro.AD_TEMPPADRAO,0)/100 from tgfpro pro where pro.codprod = I.codserv),0) AS TEMPOPADRAO, \n"
+//					+ "I.QTDNEG, \n"
+//					+ "I.CODSERV \n"
+//					+ "FROM AD_TCSITE I \n"
+//					+ "WHERE NUMOS = "+NUMOS);
+			sql.appendSql("SELECT I.NUMOS,\r\n"
+					+ "I.NUMITEM,\r\n"
+					+ "(TRUNC((SELECT HORASVENDIDASDEC\r\n"
+					+ "FROM AD_TCSITE ITE\r\n"
+					+ "WHERE ITE.NUMOS =I.NUMOS AND ITE.NUMITEM = I.NUMITEM),2)) AS HSTRABALHADAS,\r\n"
+					+ "(TRUNC((SELECT TOTHORASAPONTDEC\r\n"
+					+ "FROM AD_TCSITE ITE\r\n"
+					+ "WHERE ITE.NUMOS = I.NUMOS AND ITE.NUMITEM = I.NUMITEM),2)) AS APONTAMENTOS, \r\n"
+					+ "COALESCE((select COALESCE(pro.AD_TEMPPADRAO,0)/100 from tgfpro pro where pro.codprod = I.codserv),0) AS TEMPOPADRAO, \r\n"
+					+ "I.QTDNEG, \r\n"
+					+ "I.CODSERV \r\n"
+					+ "FROM AD_TCSITE I \r\n"
 					+ "WHERE NUMOS = "+NUMOS);
 			System.out.println("SQL: "+sql.toString());
 			
@@ -138,24 +156,24 @@ public class fecharOS implements AcaoRotinaJava
         					JdbcUtils.closeResultSet(rset);
     						throw new Exception("Horas não preenchidas para o serviço "+codprod);
     					}
-        		} else if("F".equals(tipoCalculo)) { // Preço Fixo
-    				return;
-        		} else if("N".equals(tipoCalculo)) { // Preço Manual
-    				return;
-        		} else if("P".equals(tipoCalculo)) { // Tempo Padrão x Valor
-    				quantidade = rset.getBigDecimal("TEMPOPADRAO");
-    				if(quantidade == null || quantidade.compareTo(BigDecimal.ZERO) == 0) {
-    					JdbcUtils.closeResultSet(rset);
-						throw new Exception("Tempo padrão não preenchido para o serviço "+codprod);
-					}
-        		} else if("Q".equals(tipoCalculo)) { // Quantidade x Valor
-    				if(quantidade == null || quantidade.compareTo(BigDecimal.ZERO) == 0) {
-    					JdbcUtils.closeResultSet(rset);
-						throw new Exception("Quantidade não preenchida para o serviço "+codprod);
-					}
-        		}
+	        		} else if("F".equals(tipoCalculo)) { // Preço Fixo
+	    				return;
+	        		} else if("N".equals(tipoCalculo)) { // Preço Manual
+	    				return;
+	        		} else if("P".equals(tipoCalculo)) { // Tempo Padrão x Valor
+	    				quantidade = rset.getBigDecimal("TEMPOPADRAO");
+	    				if(quantidade == null || quantidade.compareTo(BigDecimal.ZERO) == 0) {
+	    					JdbcUtils.closeResultSet(rset);
+							throw new Exception("Tempo padrão não preenchido para o serviço "+codprod);
+						}
+	        		} else if("Q".equals(tipoCalculo)) { // Quantidade x Valor
+	    				if(quantidade == null || quantidade.compareTo(BigDecimal.ZERO) == 0) {
+	    					JdbcUtils.closeResultSet(rset);
+							throw new Exception("Quantidade não preenchida para o serviço "+codprod);
+						}
+	        		}
+				}
 			}
-		}
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new Exception(e.getMessage());

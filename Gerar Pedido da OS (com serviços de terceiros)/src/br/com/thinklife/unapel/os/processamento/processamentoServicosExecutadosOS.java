@@ -28,25 +28,30 @@ import br.com.thinklife.unapel.os.save.saves;
 public class processamentoServicosExecutadosOS
 {
     @SuppressWarnings("unused")
-	public static void processar(final ContextoAcao arg0) throws Exception {
-        final EntityFacade dwf = EntityFacadeFactory.getDWFFacade();
-        final JdbcWrapper jdbcWrapper = dwf.getJdbcWrapper();
+	public static void processar(ContextoAcao arg0) throws Exception {
+        EntityFacade dwf = EntityFacadeFactory.getDWFFacade();
+        JdbcWrapper jdbcWrapper = dwf.getJdbcWrapper();
         jdbcWrapper.openSession();
-        final BigDecimal usuLogado = arg0.getUsuarioLogado();
-        final Registro[] linhas = arg0.getLinhas();
+        BigDecimal usuLogado = arg0.getUsuarioLogado();
+        Registro[] linhas = arg0.getLinhas();
         BigDecimal numos = BigDecimal.ZERO;
         String fechamento = "";
         BigDecimal nunotaorigem = BigDecimal.ZERO;
         for (Integer i = 0; i < linhas.length; ++i) {
             numos = new BigDecimal(new StringBuilder().append(linhas[i].getCampo("NUMOS")).toString());
             fechamento = new StringBuilder().append(linhas[i].getCampo("FECHAMENTO")).toString();
-            nunotaorigem = new BigDecimal(new StringBuilder().append(linhas[i].getCampo("NUNOTA")).toString());
-            if (!fechamento.equals("S")) {
+            BigDecimal nroOrcamentoOrigem = (BigDecimal) linhas[i].getCampo("NUNOTA");
+            if(nroOrcamentoOrigem == null)
+            	nunotaorigem = null;
+            else
+            	nunotaorigem = new BigDecimal(new StringBuilder().append(nroOrcamentoOrigem).toString());
+            if(nunotaorigem == null)
+            	System.out.println("NUNOTA Nulo, não serão criados registros na TGFVAR.");
+            if (!fechamento.equals("S"))
                 arg0.mostraErro("Não é possível gerar pedido para Ordem de Serviço em aberto");
-            }
-            final String consultaModeloNOTA = buscaDados.modNotaServico(numos, usuLogado);
-            final PreparedStatement pstm1 = jdbcWrapper.getPreparedStatement(consultaModeloNOTA);
-            final ResultSet modelodeNota = pstm1.executeQuery();
+            String consultaModeloNOTA = buscaDados.modNotaServico(numos, usuLogado);
+            PreparedStatement pstm1 = jdbcWrapper.getPreparedStatement(consultaModeloNOTA);
+            ResultSet modelodeNota = pstm1.executeQuery();
             BigDecimal localVenda = BigDecimal.ZERO;
             BigDecimal codemp = BigDecimal.ZERO;
             BigDecimal codparc = BigDecimal.ZERO;
@@ -81,13 +86,13 @@ public class processamentoServicosExecutadosOS
             }
             BigDecimal codVeiculo = (BigDecimal) linhas[i].getCampo("CODVEICULO");
             BigDecimal vlrNota = BigDecimal.ZERO;
-            final String consulta = buscaDados.consultaSQL(numos);
-            final PreparedStatement pstm2 = jdbcWrapper.getPreparedStatement(consulta);
-            final ResultSet pedidodeVendaOS = pstm2.executeQuery();
+            String consulta = buscaDados.consultaSQL(numos);
+            PreparedStatement pstm2 = jdbcWrapper.getPreparedStatement(consulta);
+            ResultSet pedidodeVendaOS = pstm2.executeQuery();
             BigDecimal nunota = BigDecimal.ZERO;
             Integer contador = 0;
             while (pedidodeVendaOS.next()) {
-                final BigDecimal pedidoVenda = pedidodeVendaOS.getBigDecimal("AD_NROPEDVENDA");
+                BigDecimal pedidoVenda = pedidodeVendaOS.getBigDecimal("AD_NROPEDVENDA");
                 if (pedidoVenda.compareTo(BigDecimal.ZERO) <= 0) {
                     if (contador < 1) {
                         nunota = saves.cabecalhoPecasUtilizadas(dwf, codemp, codparc, codparcDest, numnota, codtipoper, codtipvenda, codnat, codcencus, numos, tipmov, tipoOs, localVenda, vendedor, codVeiculo);
@@ -98,7 +103,7 @@ public class processamentoServicosExecutadosOS
                     String usoProd = Controller.getUsoProd(codprod);
                     BigDecimal quantidade = BigDecimal.ZERO;
                     BigDecimal vlrUnit = BigDecimal.ZERO;
-                    final String garantia = pedidodeVendaOS.getString("GARANTIA");
+                    String garantia = pedidodeVendaOS.getString("GARANTIA");
 //                    if (garantia.equals("S")) {
 //                        quantidade = pedidodeVendaOS.getBigDecimal("TEMPOPADRAO");
 //                    } else { // ------- INICIO ALTERAÇÕES DE ACORDO COM PRECIFICAÇÃO DO SERVICO ------- //
@@ -122,7 +127,7 @@ public class processamentoServicosExecutadosOS
 	            				if(hrsApontamentos == null || hrsApontamentos.compareTo(BigDecimal.ZERO) == 0) {
             						throw new Exception("Horas não preenchidas para o serviço "+codprod);
             					} else {
-            						quantidade = hrsTrabalhadas;
+            						quantidade = hrsApontamentos;
             					}
             				} else {
             					quantidade = hrsTrabalhadas;
@@ -150,6 +155,8 @@ public class processamentoServicosExecutadosOS
                 		if("V".equals(baseValor)) { // Mecânico - Venda
                 			System.out.println("Mecânico - Venda");
                 			BigDecimal vlrMecanicoVenda = Controller.getValorVendaMecanico(codParcMecanico);
+                			if(vlrMecanicoVenda == null)
+                				throw new Exception("Valor de venda para o mecânico "+codParcMecanico+" está vazio!");
         					if((BigDecimal.ZERO).compareTo(vlrMecanicoVenda) == 1)
         						throw new Exception("Valor de venda para o mecânico "+codParcMecanico+" está negativo!");
         					if(vlrMecanicoVenda != null)
@@ -158,6 +165,8 @@ public class processamentoServicosExecutadosOS
         						throw new Exception("Valor de venda não encontrado para mecânico "+codParcMecanico+"!");
                 		} else if("S".equals(baseValor)) { // Serviço
                 			System.out.println("Serviço");
+                			if(vlrPadrao == null)
+                				throw new Exception("Valor do serviço está vazio!");
                 			if((BigDecimal.ZERO).compareTo(vlrPadrao) == 1)
         						throw new Exception("Valor do serviço está negativo!");
         					if(vlrPadrao != null)
@@ -170,6 +179,8 @@ public class processamentoServicosExecutadosOS
                 		} else if("C".equals(baseValor)) { // Mecânico - Custo
                 			System.out.println("Mecânico - Custo");
                 			BigDecimal vlrMecanicoCusto = Controller.getValorCustoMecanico(codParcMecanico);
+                			if(vlrMecanicoCusto == null)
+        						throw new Exception("Valor de custo para o mecânico "+codParcMecanico+" está vazio!");
         					if((BigDecimal.ZERO).compareTo(vlrMecanicoCusto) == 1)
         						throw new Exception("Valor de custo para o mecânico "+codParcMecanico+" está negativo!");
         					if(vlrMecanicoCusto != null)
@@ -183,6 +194,8 @@ public class processamentoServicosExecutadosOS
         						BigDecimal tipoOS = Controller.getTipoOs(numos);
         						BigDecimal empresa = Controller.getEmpresa(numos);
         						vlrTabelaDePrecos = Controller.coletarPrecoDaTabelaDePrecoDoServico(tipoOs, empresa, codprod);
+        						if(vlrTabelaDePrecos == null)
+        							throw new Exception("Valor vazio encontrado para o Serviço "+codprod+" na Tabela de Preço do Serviço!");
         						if((BigDecimal.ZERO).compareTo(vlrTabelaDePrecos) == 1)
         							throw new Exception("Valor negativo encontrado para o Serviço "+codprod+" na Tabela de Preço do Serviço!");
         					} catch(Exception e) {
@@ -192,27 +205,28 @@ public class processamentoServicosExecutadosOS
         					vlrUnit = vlrTabelaDePrecos;
                 		}
 //            		} 
-                    final String codvol = pedidodeVendaOS.getString("CODVOL");
+                    String codvol = pedidodeVendaOS.getString("CODVOL");
                     BigDecimal vlrtot = pedidodeVendaOS.getBigDecimal("VALORSERVICO");
                     if(vlrtot == null || vlrtot.equals(BigDecimal.ZERO))
                     	throw new Exception("Valor do serviço "+codprod+" não está preenchido!");
 //                    vlrtot = vlrtot.multiply(quantidade);
                     vlrNota = vlrNota.add(vlrtot);
                     // ------- FIM ALTERAÇÕES DE ACORDO COM PRECIFICAÇÃO DO SERVICO ------- //
-                    final BigDecimal nuItemOs = pedidodeVendaOS.getBigDecimal("NUMITEM");
-                    final String reserva = "N";
-                    final BigDecimal atualestoque = BigDecimal.ZERO;
-                    final BigDecimal codVendServico = Controller.getCodVendDoUsuario(pedidodeVendaOS.getBigDecimal("CODUSURESP"));
-                    final BigDecimal sequencia = saves.itemServicosUtilizados(dwf, nunota, codprod, codvol, quantidade, localpad, null, new BigDecimal(contador + 1), vlrtot, null, atualestoque, reserva, vlrUnit, usoProd, codVendServico);
-                    final String update = "update AD_TCSITE set AD_NROPEDVENDA = " + nunota + " where numos = " + numos + " and NUMITEM =" + nuItemOs;
-                    final PreparedStatement pstmupdate = jdbcWrapper.getPreparedStatement(update);
+                    BigDecimal nuItemOs = pedidodeVendaOS.getBigDecimal("NUMITEM");
+                    String reserva = "N";
+                    BigDecimal atualestoque = BigDecimal.ZERO;
+                    BigDecimal codVendServico = Controller.getCodVendDoUsuario(pedidodeVendaOS.getBigDecimal("CODUSURESP"));
+                    BigDecimal sequencia = saves.itemServicosUtilizados(dwf, nunota, codprod, codvol, quantidade, localpad, null, new BigDecimal(contador + 1), vlrtot, null, atualestoque, reserva, vlrUnit, usoProd, codVendServico);
+                    String update = "update AD_TCSITE set AD_NROPEDVENDA = " + nunota + " where numos = " + numos + " and NUMITEM =" + nuItemOs;
+                    PreparedStatement pstmupdate = jdbcWrapper.getPreparedStatement(update);
                     pstmupdate.executeUpdate();
-                    final String consulta2 = buscaDados.consultaTGFVAR(nunota);
-                    final PreparedStatement prepTGFVAR = jdbcWrapper.getPreparedStatement(consulta2);
-                    final ResultSet dadosTGFVAR = prepTGFVAR.executeQuery();
+                    String consulta2 = buscaDados.consultaTGFVAR(nunota);
+                    PreparedStatement prepTGFVAR = jdbcWrapper.getPreparedStatement(consulta2);
+                    ResultSet dadosTGFVAR = prepTGFVAR.executeQuery();
                     while (dadosTGFVAR.next()) {
-                        final String statusnota = dadosTGFVAR.getString("STATUSNOTA");
-                        saves.salvarTGFVAR(dwf, nunota, sequencia, nunotaorigem, sequencia, statusnota);
+                        String statusnota = dadosTGFVAR.getString("STATUSNOTA");
+                        if(nunotaorigem != null)
+                        	saves.salvarTGFVAR(dwf, nunota, sequencia, nunotaorigem, sequencia, statusnota);
                     }
                     ++contador;
                 }
@@ -224,16 +238,17 @@ public class processamentoServicosExecutadosOS
 	                System.out.println("Nota criada: "+nunota);
 	                saves.salvarTCSNOTAS(dwf, codtipoper, codparc, nunota, dtneg, numos);
 	            }
-	            BigDecimal vlrServicosTerceiro = gerarServicosDeTerceirosNaNota(nunota, localpad, nunotaorigem, numos);
+	            BigDecimal vlrServicosTerceiro = gerarServicosDeTerceirosNaNota(nunota, localpad, nunotaorigem, numos, jdbcWrapper);
 	            vlrNota = vlrNota.add(vlrServicosTerceiro);
             }
             // ------- FIM ALTERAÇÕES PARA INCLUIR SERVIÇO DE TERCEIROS NO PEDIDO ------- //
-            final String update2 = "UPDATE TGFCAB SET VLRNOTA = " + vlrNota + " WHERE NUNOTA = " + nunota;
-            final PreparedStatement pstmNota = jdbcWrapper.getPreparedStatement(update2);
+            String update2 = "UPDATE TGFCAB SET VLRNOTA = " + vlrNota + " WHERE NUNOTA = " + nunota;
+            PreparedStatement pstmNota = jdbcWrapper.getPreparedStatement(update2);
             pstmNota.executeUpdate();
             // ------- INICIO ALTERAÇÕES PARA ALTERAR ORÇAMENTO PARA PENDENTE = 'N' ------- //
 //            procurarFecharOrcamento(nunotaorigem);
-            fecharOrcamento(nunotaorigem);
+            if(nunotaorigem != null)
+            	fecharOrcamento(nunotaorigem);
             // ------- FIM ALTERAÇÕES PARA ALTERAR ORÇAMENTO PARA PENDENTE = 'N' ------- //
         }
     }
@@ -252,7 +267,7 @@ public class processamentoServicosExecutadosOS
 			
 			sql = new NativeSql(jdbc);
 			
-			sql.appendSql("SELECT * FROM AD_TCSSERVTERC WHERE NUMOS = "+numos);
+			sql.appendSql("SELECT * FROM AD_TCSSERVTERC WHERE NVL(NUNOTAPED,0) = 0 AND NUMOS = "+numos);
 			System.out.println("SQL: "+sql.toString());
 			
 			rset = sql.executeQuery();
@@ -325,7 +340,7 @@ public class processamentoServicosExecutadosOS
 		}
 	}
 
-	private static BigDecimal gerarServicosDeTerceirosNaNota(BigDecimal nunota, BigDecimal localpad, BigDecimal nunotaorigem, BigDecimal numos) throws Exception {
+	private static BigDecimal gerarServicosDeTerceirosNaNota(BigDecimal nunota, BigDecimal localpad, BigDecimal nunotaorigem, BigDecimal numos, JdbcWrapper jdbcWrapper) throws Exception {
 		JdbcWrapper jdbc = null;
 		NativeSql sql = null;
 		ResultSet rset = null;
@@ -340,7 +355,7 @@ public class processamentoServicosExecutadosOS
 			
 			sql = new NativeSql(jdbc);
 			
-			sql.appendSql("SELECT CODPROD, VALORSERVICO FROM AD_TCSSERVTERC WHERE NUMOS = "+numos);
+			sql.appendSql("SELECT CODPROD, VALORSERVICO, CODSERVTERC FROM AD_TCSSERVTERC WHERE NUMOS = "+numos);
 			System.out.println("SQL: "+sql.toString());
 			
 			rset = sql.executeQuery();
@@ -349,6 +364,7 @@ public class processamentoServicosExecutadosOS
 				BigDecimal codprod = rset.getBigDecimal("CODPROD");
 				String usoprod = Controller.getUsoProd(codprod);
 				BigDecimal vlrtot = rset.getBigDecimal("VALORSERVICO");
+				BigDecimal codServTerc = rset.getBigDecimal("CODSERVTERC");
 				BigDecimal vlrUnit = vlrtot;
 				vlrTotal = vlrTotal.add(vlrtot);
 				BigDecimal seq = getSequencia(nunota);
@@ -356,14 +372,18 @@ public class processamentoServicosExecutadosOS
 				System.out.println("Criando serviço de terceiro... "+nunota+" "+codprod+" "+vlrUnit);
 		        BigDecimal sequencia = saves.criarServicoDeTerceiroNaOS(nunota, codprod, codvol, BigDecimal.ONE, localpad, null, seq, vlrtot, null, BigDecimal.ZERO, "N", vlrUnit, usoprod);
 		        
-		        final String consulta2 = buscaDados.consultaTGFVAR(nunota);
-		        final PreparedStatement prepTGFVAR = jdbc.getPreparedStatement(consulta2);
-		        final ResultSet dadosTGFVAR = prepTGFVAR.executeQuery();
+		        String consulta2 = buscaDados.consultaTGFVAR(nunota);
+		        PreparedStatement prepTGFVAR = jdbc.getPreparedStatement(consulta2);
+		        ResultSet dadosTGFVAR = prepTGFVAR.executeQuery();
 		        while (dadosTGFVAR.next()) {
-		            final String statusnota = dadosTGFVAR.getString("STATUSNOTA");
+		            String statusnota = dadosTGFVAR.getString("STATUSNOTA");
 		            System.out.println("Criando TGFVAR...");
-		            saves.criarRegistroNaTGFVAR(nunota, sequencia, nunotaorigem, sequencia, statusnota);
+		            if(nunotaorigem != null)
+		            	saves.criarRegistroNaTGFVAR(nunota, sequencia, nunotaorigem, sequencia, statusnota);
 		        }
+		        String update = "UPDATE AD_TCSSERVTERC SET NUNOTAPED = "+nunota+" WHERE NUMOS = "+numos+" AND CODSERVTERC = "+codServTerc;
+                PreparedStatement pstmupdate = jdbcWrapper.getPreparedStatement(update);
+                pstmupdate.executeUpdate();
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -450,17 +470,17 @@ public class processamentoServicosExecutadosOS
 	}
 
 	@SuppressWarnings("unused")
-	public static Timestamp ArrumaData(final String data) throws Exception {
-        final String datainicial = data;
-        final String horainicial = datainicial.split(" ")[1];
-        final String[] datainicial2 = datainicial.replace(horainicial, "").split("-");
-        final String diadata = datainicial2[2];
-        final String mesdata = datainicial2[1];
-        final String anodata = datainicial2[0];
-        final String dataa;
-        final String data_nova_inicial = dataa = String.valueOf(diadata.replace(" ", "")) + "/" + mesdata + "/" + anodata;
-        final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
-        final Date d1Inicial = dateFormat.parse(String.valueOf(dataa) + " " + horainicial.replace(".0", ""));
+	public static Timestamp ArrumaData(String data) throws Exception {
+        String datainicial = data;
+        String horainicial = datainicial.split(" ")[1];
+        String[] datainicial2 = datainicial.replace(horainicial, "").split("-");
+        String diadata = datainicial2[2];
+        String mesdata = datainicial2[1];
+        String anodata = datainicial2[0];
+        String dataa;
+        String data_nova_inicial = dataa = String.valueOf(diadata.replace(" ", "")) + "/" + mesdata + "/" + anodata;
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        Date d1Inicial = dateFormat.parse(String.valueOf(dataa) + " " + horainicial.replace(".0", ""));
         return new Timestamp(d1Inicial.getTime());
     }
 }

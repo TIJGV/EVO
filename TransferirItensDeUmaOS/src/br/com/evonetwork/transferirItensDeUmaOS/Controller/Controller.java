@@ -20,6 +20,7 @@ import br.com.sankhya.jape.wrapper.JapeFactory;
 import br.com.sankhya.jape.wrapper.JapeWrapper;
 import br.com.sankhya.modelcore.util.DynamicEntityNames;
 import br.com.sankhya.modelcore.util.EntityFacadeFactory;
+import br.com.sankhya.modelcore.util.MGECoreParameter;
 
 public class Controller {
 	
@@ -370,14 +371,15 @@ public class Controller {
 		return vlrNota;
 	}
 	
-	public static String abrirTela(BigDecimal nuNota) {
+	public static String abrirTela(BigDecimal nuNota) throws Exception {
 		String tela = "br.com.sankhya.com.mov.CentralNotas";
 		byte[] encodedBytesTela = Base64.encodeBase64(tela.getBytes());
 		
 		String parametros = "{\"NUNOTA\":"+nuNota+"}";
 		byte[] encodedBytesParametros = Base64.encodeBase64(parametros.getBytes());
 		
-		String link = "http://unapel.nuvemdatacom.com.br:9706/mge/system.jsp#app/" + new String(encodedBytesTela) + "/" + new String(encodedBytesParametros) + "/";
+		String link = MGECoreParameter.getParameterAsString("URLSANKHYA")+"/mge/system.jsp#app/" + new String(encodedBytesTela) + "/" + new String(encodedBytesParametros) + "/";
+		System.out.println("Link devolução: "+link);
 		
 		String url = "<a target=\"_parent\" title=\"Trasferência gerada com sucesso\" href=\""+link+"\">"+nuNota+"</a>";
 				

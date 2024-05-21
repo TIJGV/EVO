@@ -1,11 +1,7 @@
 package br.com.evonetwork.precificacaoDeServico.Controller;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.sql.ResultSet;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 import com.sankhya.util.JdbcUtils;
 
@@ -55,27 +51,41 @@ public class Controller {
 				try {
 					BigDecimal valor = getValor(baseValor, vlrPadrao, codParcMecanico, str, servicoExecutadoVO);
 					BigDecimal precoServico = BigDecimal.ZERO;
-					int hrInicial = servicoExecutadoVO.asInt("HRINICIAL");
-					int hrFinal = servicoExecutadoVO.asInt("HRFINAL");
-					int intervalo = servicoExecutadoVO.asInt("INTERVALO");
-					if(hrFinal == 0) {
-						int hrsApontamentos = servicoExecutadoVO.asInt("HORAAPONTAMENTOS");
-						if(hrsApontamentos == 0)
-							throw new Exception("O serviço executado não possui Horas preenchidas para realizar o cálculo do preço!");
-						BigDecimal hrsVendidas = calcularHoras(0, hrsApontamentos);
-						precoServico = valor.multiply(hrsVendidas);
-						atualizarPrecoDoServico(precoServico, servicoExecutadoVO);
-					} else {
-						float hrsSemIntervalo = calcularHorasDoServico(hrInicial, hrFinal);
-//						str.append("\nHrs: "+hrsSemIntervalo);
-						float hrIntervalo = (calcularHoras(0, intervalo).multiply(BigDecimal.valueOf(60)).setScale(0, RoundingMode.UP)).intValue();
-//						str.append("\nIntervalo: "+hrIntervalo);
-						BigDecimal hrsVendidas = BigDecimal.valueOf((hrsSemIntervalo - hrIntervalo)/60);
-//						str.append("\nHrs Total: "+hrsVendidas);
-						precoServico = valor.multiply(hrsVendidas);
-//						str.append("\nPreço: "+precoServico);
-						atualizarPrecoDoServico(precoServico, servicoExecutadoVO);
-					}
+					BigDecimal quantidade = BigDecimal.ZERO;
+					BigDecimal hrsTrabalhadas = servicoExecutadoVO.asBigDecimal("HORASVENDIDASDEC");
+					if(hrsTrabalhadas == null || hrsTrabalhadas.compareTo(BigDecimal.ZERO) == 0) {
+        				BigDecimal hrsApontamentos = servicoExecutadoVO.asBigDecimal("TOTHORASAPONTDEC");
+        				if(hrsApontamentos == null || hrsApontamentos.compareTo(BigDecimal.ZERO) == 0) {
+    						throw new Exception("Horas não preenchidas para o serviço "+servicoExecutadoVO.asBigDecimal("CODSERV"));
+    					} else {
+    						quantidade = hrsApontamentos;
+    					}
+    				} else {
+    					quantidade = hrsTrabalhadas;
+    				}
+					precoServico = valor.multiply(quantidade);
+					atualizarPrecoDoServico(precoServico, servicoExecutadoVO);
+//					int hrInicial = servicoExecutadoVO.asInt("HRINICIAL");
+//					int hrFinal = servicoExecutadoVO.asInt("HRFINAL");
+//					int intervalo = servicoExecutadoVO.asInt("INTERVALO");
+//					if(hrFinal == 0) {
+//						int hrsApontamentos = servicoExecutadoVO.asInt("HORAAPONTAMENTOS");
+//						if(hrsApontamentos == 0)
+//							throw new Exception("O serviço executado não possui Horas preenchidas para realizar o cálculo do preço!");
+//						BigDecimal hrsVendidas = calcularHoras(0, hrsApontamentos);
+//						precoServico = valor.multiply(hrsVendidas);
+//						atualizarPrecoDoServico(precoServico, servicoExecutadoVO);
+//					} else {
+//						float hrsSemIntervalo = calcularHorasDoServico(hrInicial, hrFinal);
+////						str.append("\nHrs: "+hrsSemIntervalo);
+//						float hrIntervalo = (calcularHoras(0, intervalo).multiply(BigDecimal.valueOf(60)).setScale(0, RoundingMode.UP)).intValue();
+////						str.append("\nIntervalo: "+hrIntervalo);
+//						BigDecimal hrsVendidas = BigDecimal.valueOf((hrsSemIntervalo - hrIntervalo)/60);
+////						str.append("\nHrs Total: "+hrsVendidas);
+//						precoServico = valor.multiply(hrsVendidas);
+////						str.append("\nPreço: "+precoServico);
+//						atualizarPrecoDoServico(precoServico, servicoExecutadoVO);
+//					}
 				} catch(Exception e) {
 					e.printStackTrace();
 					throw new Exception(e.getMessage());
@@ -126,39 +136,39 @@ public class Controller {
 		}
 	}
 
-	private static int calcularHorasDoServico(int hrInicial, int hrFinal) throws Exception {
-		try {
-			String dhIni = "2023-01-01 "+formatarInteiroParaHoras(hrInicial);
-			String dhFin = "2023-01-01 "+formatarInteiroParaHoras(hrFinal);
-			
-			DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-			
-			Date d1 = df.parse(dhIni);
-			Date d2 = df.parse(dhFin);
-			
-			BigDecimal diff = BigDecimal.valueOf(d2.getTime() - d1.getTime());
-		    BigDecimal diffHours = diff.divide(BigDecimal.valueOf(60 * 60 * 1000), 2, RoundingMode.HALF_UP);
-		    
-			return diffHours.multiply(BigDecimal.valueOf(60)).intValue();
-		} catch(Exception e) {
-			e.printStackTrace();
-			throw new Exception(e.getMessage());
-		}
-	}
+//	private static int calcularHorasDoServico(int hrInicial, int hrFinal) throws Exception {
+//		try {
+//			String dhIni = "2023-01-01 "+formatarInteiroParaHoras(hrInicial);
+//			String dhFin = "2023-01-01 "+formatarInteiroParaHoras(hrFinal);
+//			
+//			DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+//			
+//			Date d1 = df.parse(dhIni);
+//			Date d2 = df.parse(dhFin);
+//			
+//			BigDecimal diff = BigDecimal.valueOf(d2.getTime() - d1.getTime());
+//		    BigDecimal diffHours = diff.divide(BigDecimal.valueOf(60 * 60 * 1000), 2, RoundingMode.HALF_UP);
+//		    
+//			return diffHours.multiply(BigDecimal.valueOf(60)).intValue();
+//		} catch(Exception e) {
+//			e.printStackTrace();
+//			throw new Exception(e.getMessage());
+//		}
+//	}
 
-	private static String formatarInteiroParaHoras(int hrInicial) {
-		String hora = String.valueOf(hrInicial);
-		if(hora.length() == 4) {
-			hora = hora.substring(0, 2)+":"+hora.substring(2, hora.length());
-		} else if(hora.length() == 3) {
-			hora = "0"+hora.substring(0, 1)+":"+hora.substring(1, hora.length());
-		} else if(hora.length() == 2) {
-			hora = "00:"+hora;
-		} else if(hora.length() == 1) {
-			hora = "00:0"+hora;
-		}
-		return hora;
-	}
+//	private static String formatarInteiroParaHoras(int hrInicial) {
+//		String hora = String.valueOf(hrInicial);
+//		if(hora.length() == 4) {
+//			hora = hora.substring(0, 2)+":"+hora.substring(2, hora.length());
+//		} else if(hora.length() == 3) {
+//			hora = "0"+hora.substring(0, 1)+":"+hora.substring(1, hora.length());
+//		} else if(hora.length() == 2) {
+//			hora = "00:"+hora;
+//		} else if(hora.length() == 1) {
+//			hora = "00:0"+hora;
+//		}
+//		return hora;
+//	}
 
 	private static BigDecimal getEmpresa(BigDecimal numOs) throws Exception {
 		JdbcWrapper jdbc = null;
@@ -302,19 +312,19 @@ public class Controller {
 			switch (baseValor) {
 				case "V": //Mecânico - Venda
 					BigDecimal vlrMecanicoVenda = getValorVendaMecanico(codParcMecanico);
+					if(vlrMecanicoVenda == null)
+						throw new Exception("Valor de venda não encontrado para mecânico "+codParcMecanico+"!");
 					if((BigDecimal.ZERO).compareTo(vlrMecanicoVenda) == 1)
 						throw new Exception("Valor de venda para o mecânico "+codParcMecanico+" está negativo!");
 					if(vlrMecanicoVenda != null)
 						return vlrMecanicoVenda;
-					else
-						throw new Exception("Valor de venda não encontrado para mecânico "+codParcMecanico+"!");
 				case "S": //Serviço
+					if(vlrPadrao == null)
+						throw new Exception("Valor do serviço não encontrado!");
 					if((BigDecimal.ZERO).compareTo(vlrPadrao) == 1)
 						throw new Exception("Valor do serviço está negativo!");
 					if(vlrPadrao != null)
 						return vlrPadrao;
-					else
-						throw new Exception("Valor do serviço não encontrado!");
 				case "M": //Manual
 					str.append("Valor do serviço "+servicoExecutadoVO.asBigDecimal("CODSERV")+" é manual, o usuário deve inserir o preço manualmente na OS.\n");
 					return BigDecimal.ZERO;
@@ -334,6 +344,8 @@ public class Controller {
 						BigDecimal empresa = getEmpresa(numOs);
 						BigDecimal codServ = servicoExecutadoVO.asBigDecimal("CODSERV");
 						vlrTabelaDePrecos = coletarPrecoDaTabelaDePrecoDoServico(tipoOs, empresa, codServ);
+						if(vlrTabelaDePrecos == null)
+							throw new Exception("Valor não encontrado para o Serviço "+codServ+" na Tabela de Preço do Serviço!");
 						if((BigDecimal.ZERO).compareTo(vlrTabelaDePrecos) == 1)
 							throw new Exception("Valor negativo encontrado para o Serviço "+codServ+" na Tabela de Preço do Serviço!");
 					} catch(Exception e) {

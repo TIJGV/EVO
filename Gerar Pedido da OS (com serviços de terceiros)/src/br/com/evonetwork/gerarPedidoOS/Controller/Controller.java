@@ -298,8 +298,7 @@ public class Controller {
 		return dado;
 	}
 
-	public static BigDecimal coletarPrecoDaTabelaDePrecoDoServico(String tipoOs, BigDecimal empresa,
-			BigDecimal codServ) throws Exception {
+	public static BigDecimal coletarPrecoDaTabelaDePrecoDoServico(String tipoOs, BigDecimal empresa, BigDecimal codServ) throws Exception {
 		JdbcWrapper jdbc = null;
 		NativeSql sql = null;
 		ResultSet rset = null;

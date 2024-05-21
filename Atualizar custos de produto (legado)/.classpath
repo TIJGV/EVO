@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/jdk1.8.0_121"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/applauncher-api.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/criptdash.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/dwf.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/dwf-model.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/filterengine.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/groovy-snk-all-2.4.12.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/HubClient.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/jape.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/jaxen-core.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/jaxen-jdom.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/jboleto.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/jbossaddons.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/jdom-jaxen-jboss.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/mgecom-model-client.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/mge-convert.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/mgefin-model-client.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/mge-modelcore.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/mge-modelcore-client.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/mge-modulemgr.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/mge-os-client.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/mge-param.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/mge-schedule.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/mgeserv-model-client.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/mge-table.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/print-service-base.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/print-service-base-javadoc.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/print-service-base-sources.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/print-service-connector.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/print-service-connector-javadoc.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/print-service-connector-sources.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/reflectdao.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/SanAuth-1.0.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/sancrypt.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/sanhttp.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/san-jasper-client.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/sank-controller-util.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/sankhya-commons.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/sankhya-gwt.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/SankhyaW-extensions.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/sannfe.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/sanSMS-client.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/sanutil.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/sanws.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/sas.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/sascomm.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/skw-api-service-totalcross-1.0.0.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/skw-api-service-totalcross-1.0.0-javadoc.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/skw-api-service-totalcross-1.0.0-sources.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/skw-environment.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/snk-ant.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/soapsigner.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/SVNHistoryFinder.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/textreport.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/themesync.jar"/>
+	<classpathentry kind="lib" path="C:/sk-java/Bibliotecas Java/Pacote/timimob-model.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

@@ -443,7 +443,7 @@ public class ControllerEnviarOS {
 				+ "\"TipoAtendimento\": \""+os.getTipoAtendimento()+"\",\r\n"
 				+ "\"Proprietario\": \""+os.getProprietario()+"\",\r\n"
 				+ "\"LojaProprietario\": \""+os.getLojaProprietario()+"\",\r\n"
-				+ "\"Observacao\": \""+os.getObservacao().replaceAll("\\n", "")+"\",\r\n"
+				+ "\"Observacao\": \""+os.getObservacao().replaceAll("\\n", "").replaceAll("\\p{C}", " ")+"\",\r\n"
 				+ "\"DataInclusaoOS\": \""+os.getDataInclusaoOS()+"\",\r\n"
 				+ "\"DataEntregaVeiculo\": \""+os.getDataEntregaVeiculo()+"\",\r\n"
 				+ "\"CodigoStatusOs\": \""+os.getCodStatusOS()+"\",\r\n"
@@ -840,7 +840,7 @@ public class ControllerEnviarOS {
 			os.setLojaProprietario(filialCliente);
 			
 			/* OBSERVAÇÃO */
-			os.setObservacao(((String) linha.getCampo("DESCRSERV")).replaceAll("\\n", ""));
+			os.setObservacao(((String) linha.getCampo("DESCRSERV")).replaceAll("\\n", "").replaceAll("\n", "").replaceAll("\r", ""));
 			
 			/* DH ABERTURA */
 			if((Timestamp) linha.getCampo("DHABERTURA") == null)

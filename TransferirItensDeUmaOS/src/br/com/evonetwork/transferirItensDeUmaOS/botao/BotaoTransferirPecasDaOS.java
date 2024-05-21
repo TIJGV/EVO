@@ -79,7 +79,7 @@ public class BotaoTransferirPecasDaOS implements AcaoRotinaJava {
 			
 			sql = new NativeSql(jdbc);
 			
-			sql.appendSql("SELECT STATUS FROM AD_TCSOSE WHERE NUMOS = (SELECT NUMOS FROM AD_TCSPRO WHERE NUMREQUISICAO = (SELECT NUNOTAORIG FROM TGFVAR WHERE NUNOTA = "+nuNotaOriginalTransferencia+" AND ROWNUM = 1) AND CODPROD = "+codProd+")");
+			sql.appendSql("SELECT STATUS FROM AD_TCSOSE WHERE NUMOS = (SELECT NUMOS FROM AD_TCSPRO WHERE NUMREQUISICAO = (SELECT NUNOTAORIG FROM TGFVAR WHERE NUNOTA = "+nuNotaOriginalTransferencia+" AND ROWNUM = 1) AND CODPROD = "+codProd+" AND ROWNUM = 1)");
 			System.out.println("SQL: "+sql.toString());
 			
 			rset = sql.executeQuery();
