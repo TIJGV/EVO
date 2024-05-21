@@ -36,7 +36,7 @@ public class ColetaCamposParaTgffin {
 					+ "(SELECT ATUALFIN FROM TGFTOP WHERE CODTIPOPER = CAB.CODTIPOPER AND DHALTER = CAB.DHTIPOPER) AS RECDESP,"
 					+ "(SELECT DTCONTRATO FROM TCSCON WHERE NUMCONTRATO = ITE.NUMCONTRATO) AS DTVENC"
 					+ " FROM TGFCAB CAB JOIN TGFITE ITE ON CAB.NUNOTA = ITE.NUNOTA WHERE CAB.NUNOTA = " + nuNota);
-
+			System.out.println(sql.toString());
 			rset = sql.executeQuery();
 
 			while (rset.next()) {

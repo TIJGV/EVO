@@ -11,6 +11,7 @@ public class BotaoDeAcao implements AcaoRotinaJava{
 	
 	@Override
 	public void doAction(ContextoAcao contexto) throws Exception {
+		System.out.println("***** EVO - INICIO - GERAR PEDIDO DO CONTRATO ********");
 		Registro[] linhas = contexto.getLinhas();
 		PreencherCab cab = new PreencherCab();
 		
@@ -20,5 +21,6 @@ public class BotaoDeAcao implements AcaoRotinaJava{
 			BigDecimal codTipContrato = (BigDecimal) linha.getCampo("AD_CODTIPCON");
 			cab.criarRegistroTgfcab(numContrato,codTipContrato);
 		}
+		System.out.println("***** EVO - FIM - GERAR PEDIDO DO CONTRATO ********");
 	}
 }

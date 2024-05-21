@@ -17,10 +17,27 @@ public class PreencherFin {
 		fin.getDadosParaTgffin(nuNota);
 		JapeSession.SessionHandle hnd = null;
 		try {
+			System.out.println("CODCENCUS" + fin.getFin().getCodcencus());
+			System.out.println("CODEMP" + fin.getFin().getCodemp());
+			System.out.println("CODMOEDA" + fin.getFin().getCodmoeda());
+			System.out.println("CODNAT" + fin.getFin().getCodnat());
+			System.out.println("CODPARC" + fin.getFin().getCodparc());
+			System.out.println("CODTIPTIT" + fin.getFin().getCodtiptit());
+			System.out.println("NUMCONTRATO" + fin.getFin().getNumcontrato());
+			System.out.println("NUMNOTA" + fin.getFin().getNumnota());
+			System.out.println("NUNOTA" + fin.getFin().getNunota());
+			System.out.println("RECDESP" + fin.getFin().getRecdesp());
+			System.out.println("VLRDESDOB" + fin.getFin().getVlrdesdob());
+			System.out.println("DTNEG" + fin.getFin().getDtneg());
+			System.out.println("DTVENC" + Utils.MudarDiaPag(Utils.somaMeses(fin.getFin().getDtvenc(), m+1), fin.getFin().getDiapag()));
+			System.out.println("ORIGEM" + fin.getFin().getOrigem());
+			System.out.println("PROVISAO" + fin.getFin().getProvisao());
+			
 			hnd = JapeSession.open();
 			JapeWrapper finDAO = JapeFactory.dao("Financeiro");
 				DynamicVO save = finDAO.create()
-						.set("CODCENCUS", CodempCodcencus.getCencus(fin.getFin().getCodemp()))
+						.set("CODCENCUS", fin.getFin().getCodcencus())
+						//.set("CODCENCUS", CodempCodcencus.getCencus(fin.getFin().getCodemp()))
 						.set("CODEMP", fin.getFin().getCodemp())
 						.set("CODMOEDA", fin.getFin().getCodmoeda())
 						.set("CODNAT", fin.getFin().getCodnat())

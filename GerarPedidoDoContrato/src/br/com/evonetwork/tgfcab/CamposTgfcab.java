@@ -23,6 +23,7 @@ public class CamposTgfcab {
 	private String dttermino;
 	private int qtMeses;
 	private BigDecimal numcontrato;
+	private BigDecimal codmonsankhya;
 	
 	Utils dt = new Utils();
 	
@@ -146,5 +147,11 @@ public class CamposTgfcab {
 				"\nserienota: " + this.serienota +
 				"\ndttermino: " + this.dttermino +
 				"\nqtMeses: " + this.qtMeses;
+	}
+	public BigDecimal getCodmonsankhya() {
+		return codmonsankhya;
+	}
+	public void setCodmonsankhya(BigDecimal codmonsankhya) {
+		this.codmonsankhya = codmonsankhya;
 	}
 }

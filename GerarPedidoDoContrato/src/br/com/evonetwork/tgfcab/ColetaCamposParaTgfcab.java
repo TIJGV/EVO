@@ -19,6 +19,7 @@ public class ColetaCamposParaTgfcab {
 	BigDecimal linhas = new BigDecimal(0);
 
 	public void getDadosParaTgfcab(BigDecimal numContrato) throws Exception {
+		System.out.println("getDadosParaTgfcab >>");
 		verificaSql(numContrato);
 
 		JdbcWrapper jdbc = null;
@@ -35,19 +36,17 @@ public class ColetaCamposParaTgfcab {
 
 			sql = new NativeSql(jdbc);
 			if (linhas.compareTo(new BigDecimal(0)) > 0) {
-				sql.appendSql("SELECT (AD_VLRCONTRATO * PERCRATEIO/100) AS VLRTOT, OBSERVACOES, CODTIPVENDA, TOPFATURCON "
+				sql.appendSql("SELECT (AD_VLRCONTRATO * PERCRATEIO/100) AS VLRTOT, CODMONSANKHYA, OBSERVACOES, CODTIPVENDA, TOPFATURCON "
 						+ ",RAV.CODCENCUS, RAV.CODNAT, CON.CODPARC, CON.DTCONTRATO , CON.DTTERMINO,"
 						+ " (SELECT AD_CODEMP FROM TSICUS WHERE CODCENCUS = RAV.CODCENCUS) AS CODEMP"
 						+ " FROM TGFCRI CRI JOIN TGFRAV RAV ON CRI.CODCRITERIO = RAV.NUFIN "
 						+ "JOIN TCSCON CON ON CRI.NUMCONTRATO = CON.NUMCONTRATO "
 						+ "WHERE RAV.ORIGEM = 'C' AND CRI.NUMCONTRATO = " + numContrato);
 			} else {
-				sql.appendSql("SELECT AD_VLRCONTRATO AS VLRTOT, CODTIPVENDA, OBSERVACOES, TOPFATURCON ,CON.CODCENCUS,"
-						+ " CON.CODNAT, CON.CODPARC, CON.DTCONTRATO ,CON.DTTERMINO, "
-						+ "(SELECT AD_CODEMP FROM TSICUS WHERE CODCENCUS = CON.CODCENCUS) AS CODEMP"
-						+ " FROM TCSCON CON WHERE CON.NUMCONTRATO = " + numContrato);
+				sql.appendSql("SELECT AD_VLRCONTRATO AS VLRTOT, CODMONSANKHYA, CODTIPVENDA, OBSERVACOES, TOPFATURCON ,CON.CODCENCUS, CON.CODNAT, CON.CODPARC, CON.DTCONTRATO ,CON.DTTERMINO, (SELECT AD_CODEMP FROM TSICUS WHERE CODCENCUS = CON.CODCENCUS) AS CODEMP FROM TCSCON CON "
+						+ "WHERE CON.NUMCONTRATO = " + numContrato);
 			}
-
+			System.out.println("SQL: " + sql.toString());
 			rset = sql.executeQuery();
 
 			while (rset.next()) {
@@ -66,9 +65,10 @@ public class ColetaCamposParaTgfcab {
 				cab.setCodtipoper(rset.getBigDecimal("TOPFATURCON"));
 				cab.setCodtipvenda(rset.getBigDecimal("CODTIPVENDA"));
 				cab.setNumnota(new BigDecimal(0));
-				cab.setCodusucomprador(new BigDecimal(0));
+				cab.setCodusucomprador(rset.getBigDecimal("CODMONSANKHYA"));
 				cab.setObservacao("Pedido do contrato número " + numContrato + "\n" + rset.getString("OBSERVACOES"));
 				cab.setSerienota("1");
+				//cab.setCodmonsankhya(rset.getBigDecimal("CODMONSANKHYA"));
 				cab.setNumcontrato(numContrato);
 
 				listaCab.add(cab);

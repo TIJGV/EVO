@@ -33,17 +33,32 @@ public class PreencherCab {
 							BigDecimal codemp;
 							BigDecimal codtipoper;
 							BigDecimal adCodoat;
-							System.out.println("teste 758");
-							if(n == 0) {
+							if (n == 0) {
 								codemp = cab.getListaCab().get(i).getCodemp();
 								codtipoper = cab.getListaCab().get(i).getCodtipoper();
 								adCodoat = null;
-								
+
 							} else {
 								codemp = CodempParceiro.getCodempParceiro(numContrato);
 								codtipoper = VerificaTopIntercon.getTopintercon();
 								adCodoat = new BigDecimal(5);
 							}
+							System.out.println("DADOS DA TGFCAB TESTE 1");
+							System.out.println("CODCENCUS" + CodempCodcencus.getCencus(codemp));
+							System.out.println("CODEMP" + codemp);
+							System.out.println("CODNAT" + cab.getListaCab().get(i).getCodnat());
+							System.out.println("CODPARC" + cab.getListaCab().get(i).getCodparc());
+							System.out.println("CODTIPOPER" + codtipoper);
+							System.out.println("CODTIPVENDA" + cab.getListaCab().get(i).getCodtipvenda());
+							System.out.println("NUMNOTA" + cab.getListaCab().get(i).getNumnota());
+							System.out.println("CODUSUCOMPRADOR" + cab.getListaCab().get(i).getCodusucomprador());
+							System.out.println("DTNEG" + Utils.somaMeses(cab.getListaCab().get(i).getDtneg(), m));
+							System.out.println("DTENTSAI" + Utils.somaMeses(cab.getListaCab().get(i).getDtentsai(), m));
+							System.out.println("OBSERVACAO" + cab.getListaCab().get(i).getObservacao());
+							System.out.println("SERIENOTA" + cab.getListaCab().get(i).getSerienota());
+							System.out.println("NUMCONTRATO" + cab.getListaCab().get(i).getNumcontrato());
+							System.out.println("AD_CODOAT" + adCodoat);
+							
 							DynamicVO save = cabDAO.create()
 									.set("CODCENCUS", CodempCodcencus.getCencus(codemp))
 									.set("CODEMP", codemp)
@@ -52,7 +67,7 @@ public class PreencherCab {
 									.set("CODTIPOPER", codtipoper)
 									.set("CODTIPVENDA", cab.getListaCab().get(i).getCodtipvenda())
 									.set("NUMNOTA", cab.getListaCab().get(i).getNumnota())
-									.set("CODUSUCOMPRADOR", cab.getListaCab().get(i).getCodusucomprador())
+									//.set("CODVEND", cab.getListaCab().get(i).getCodusucomprador())
 									.set("DTNEG", Utils.somaMeses(cab.getListaCab().get(i).getDtneg(), m))
 									.set("DTENTSAI", Utils.somaMeses(cab.getListaCab().get(i).getDtentsai(), m))
 									.set("OBSERVACAO", cab.getListaCab().get(i).getObservacao())
@@ -79,7 +94,7 @@ public class PreencherCab {
 								.set("CODTIPOPER", cab.getListaCab().get(i).getCodtipoper())
 								.set("CODTIPVENDA", cab.getListaCab().get(i).getCodtipvenda())
 								.set("NUMNOTA", cab.getListaCab().get(i).getNumnota())
-								.set("CODUSUCOMPRADOR", cab.getListaCab().get(i).getCodusucomprador())
+								//.set("CODVEND", cab.getListaCab().get(i).getCodusucomprador())
 								.set("DTNEG", Utils.somaMeses(cab.getListaCab().get(i).getDtneg(), m))
 								.set("DTENTSAI", Utils.somaMeses(cab.getListaCab().get(i).getDtentsai(), m))
 								.set("OBSERVACAO", cab.getListaCab().get(i).getObservacao())

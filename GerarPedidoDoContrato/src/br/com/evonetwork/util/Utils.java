@@ -46,39 +46,48 @@ public class Utils {
 		c.setTime(dtTermino);
 		int mes2 = c.get(Calendar.MONTH);
 		int ano2 = c.get(Calendar.YEAR);
-		
-		if(ano1 == ano2) {
+
+		if (ano1 == ano2) {
 			calculo = mes2 - mes1 + 1;
 		} else {
-			calculo = (12 - mes1 +1) + mes2 + (ano2 - ano1 - 1)*12;
+			calculo = (12 - mes1 + 1) + mes2 + (ano2 - ano1 - 1) * 12;
 		}
-		
+
 		return calculo;
 	}
-	
+
 	public static Timestamp somaMeses(Timestamp dtContrato, int meses) throws Exception {
 		Calendar c = Calendar.getInstance();
 		c.setTime(dtContrato);
 		c.add(Calendar.MONTH, meses);
 		return new Timestamp(c.getTimeInMillis());
 	}
+
 	public static BigDecimal calculaValor(BigDecimal vlrTotal, int qtdMeses, int i) {
 		BigDecimal novoVlrTotal;
-		
+
 		if (i == qtdMeses) {
 			BigDecimal vlrQuebrado = vlrTotal.divide(new BigDecimal(qtdMeses), 2, RoundingMode.DOWN);
 			BigDecimal x = vlrQuebrado.multiply(new BigDecimal(qtdMeses - 1));
-			
+
 			novoVlrTotal = vlrTotal.subtract(x);
 		} else {
 			novoVlrTotal = vlrTotal.divide(new BigDecimal(qtdMeses), 2, RoundingMode.DOWN);
 		}
 		return novoVlrTotal;
 	}
+
 	public static Timestamp MudarDiaPag(Timestamp dt, BigDecimal diaPag) {
 		Calendar c = Calendar.getInstance();
-		c.setTime(dt);
-		c.set(Calendar.DAY_OF_MONTH, diaPag.intValue());;
+
+		if (diaPag.compareTo(new BigDecimal(0)) == 0) {
+			c.setTime(dt);
+			c.add(Calendar.MONTH, -1);
+			c.set(Calendar.DAY_OF_MONTH, c.getActualMaximum(Calendar.DAY_OF_MONTH));
+		} else {
+			c.setTime(dt);
+			c.set(Calendar.DAY_OF_MONTH, diaPag.intValue());
+		}
 		return new Timestamp(c.getTimeInMillis());
 	}
 }
